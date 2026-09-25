@@ -1,131 +1,117 @@
+import { Briefcase, Inbox, TriangleAlert } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+import { sanitizeDescription } from "@/lib/sanitize";
+import { WORLDWIDE_FILTER } from "@/lib/remote";
 import HuntButton from "@/components/HuntButton";
+import JobCard from "@/components/JobCard";
+import Pagination from "@/components/Pagination";
 
-export default async function Home() {
-    // 1. Fetch all jobs from our database, sorted by newest first
-    const { data: jobs, error } = await supabase
+const PAGE_SIZE = 10;
+
+const glass =
+    "rounded-3xl border border-white/60 bg-white/60 backdrop-blur-2xl backdrop-saturate-150 dark:border-white/10 dark:bg-zinc-900/60";
+
+export default async function Home(props: PageProps<"/">) {
+    const searchParams = await props.searchParams;
+    const requestedPage = Number(searchParams.page) || 1;
+
+    // First request tells us the total count so we can clamp the page number.
+    const { count, error: countError } = await supabase
         .from("jobs")
-        .select("*")
-        .order("date_posted", { ascending: false });
+        .select("*", { count: "exact", head: true })
+        .or(WORLDWIDE_FILTER);
 
-    if (error) {
-        return (
-            <div className="p-10 text-red-500">
-                Error loading jobs: {error.message}
-            </div>
-        );
-    }
+    const totalJobs = count ?? 0;
+    const totalPages = Math.max(1, Math.ceil(totalJobs / PAGE_SIZE));
+    const page = Math.min(Math.max(1, Math.floor(requestedPage)), totalPages);
+    const from = (page - 1) * PAGE_SIZE;
+
+    const { data: jobs, error } = countError
+        ? { data: null, error: countError }
+        : await supabase
+              .from("jobs")
+              .select("*")
+              .or(WORLDWIDE_FILTER)
+              .order("date_posted", { ascending: false })
+              .range(from, from + PAGE_SIZE - 1);
 
     return (
-        <main className="min-h-screen bg-gray-50 p-10 text-gray-900">
-            <div className="max-w-6xl mx-auto">
-                <header className="mb-8 flex justify-between items-end">
-                    <div>
-                        <h1 className="text-4xl font-extrabold tracking-tight text-gray-900">
-                            Project Jarvis
-                        </h1>
-                        <p className="text-gray-500 mt-2">
-                            Your personal AI job hunter.
+        <div className="wallpaper min-h-screen text-zinc-900 dark:text-zinc-100">
+            <header className="sticky top-0 z-40 border-b border-black/5 bg-white/60 backdrop-blur-2xl backdrop-saturate-150 dark:border-white/10 dark:bg-black/50">
+                <div className="mx-auto flex h-14 max-w-4xl items-center justify-between px-4 sm:px-6">
+                    <span className="inline-flex items-center gap-2 text-sm font-semibold">
+                        <Briefcase className="size-4" aria-hidden />
+                        Jarvis
+                    </span>
+                    <HuntButton />
+                </div>
+            </header>
+
+            <main className="mx-auto max-w-4xl px-4 py-10 sm:px-6 sm:py-14">
+                <div className="mb-8">
+                    <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
+                        Remote jobs
+                    </h1>
+                    <p className="mt-2 text-zinc-500 dark:text-zinc-400">
+                        Fully remote roles from Remotive, open to candidates
+                        anywhere in the world.
+                    </p>
+                </div>
+
+                {error ? (
+                    <div
+                        className={`${glass} flex items-center gap-3 px-5 py-4 text-sm text-red-600 dark:text-red-400`}
+                    >
+                        <TriangleAlert className="size-4 shrink-0" aria-hidden />
+                        Couldn&apos;t load jobs: {error.message}
+                    </div>
+                ) : !jobs || jobs.length === 0 ? (
+                    <div className={`${glass} px-6 py-16 text-center`}>
+                        <Inbox
+                            className="mx-auto size-8 text-zinc-400"
+                            strokeWidth={1.5}
+                            aria-hidden
+                        />
+                        <p className="mt-3 font-medium">No jobs yet</p>
+                        <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+                            Fetch new jobs to see the latest listings.
                         </p>
                     </div>
-                    <div className="flex items-center gap-4">
-                        <div className="text-sm bg-blue-100 text-blue-800 px-3 py-1 rounded-full font-medium">
-                            {jobs?.length || 0} Jobs Found
-                        </div>
-                        <HuntButton />
-                    </div>
-                </header>
-
-                {/* The Data Table */}
-                <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                    <table className="w-full text-left border-collapse">
-                        <thead>
-                            <tr className="bg-gray-50 border-b border-gray-200 text-sm uppercase text-gray-500">
-                                <th className="p-4 font-semibold">
-                                    Job Title & Company
-                                </th>
-                                <th className="p-4 font-semibold">
-                                    Tech Stack
-                                </th>
-                                <th className="p-4 font-semibold">Location</th>
-                                <th className="p-4 font-semibold">Posted</th>
-                                <th className="p-4 font-semibold">Action</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-200">
-                            {jobs?.map((job) => (
-                                <tr
-                                    key={job.id}
-                                    className="hover:bg-gray-50 transition-colors"
-                                >
-                                    <td className="p-4">
-                                        <div className="font-semibold text-gray-900">
-                                            {job.title}
-                                        </div>
-                                        <div className="text-sm text-gray-500">
-                                            {job.company}
-                                        </div>
-                                    </td>
-
-                                    <td className="p-4">
-                                        <div className="flex flex-wrap gap-1">
-                                            {job.tech_stack &&
-                                            job.tech_stack.length > 0 ? (
-                                                job.tech_stack.map(
-                                                    (tech: string) => (
-                                                        <span
-                                                            key={tech}
-                                                            className="px-2 py-1 text-xs bg-gray-100 text-gray-700 rounded-md border border-gray-200"
-                                                        >
-                                                            {tech}
-                                                        </span>
-                                                    ),
-                                                )
-                                            ) : (
-                                                <span className="text-gray-400 text-xs italic">
-                                                    Not specified
-                                                </span>
-                                            )}
-                                        </div>
-                                    </td>
-
-                                    <td className="p-4 text-sm">
-                                        <div className="flex items-center gap-2">
-                                            {job.location}
-                                            {/* ⚠️ Jarvis shows a warning if the AI found strict location rules */}
-                                            {job.geo_warning && (
-                                                <span
-                                                    title="Warning: Might have strict timezone/country rules"
-                                                    className="text-yellow-500 cursor-help"
-                                                >
-                                                    ⚠️
-                                                </span>
-                                            )}
-                                        </div>
-                                    </td>
-
-                                    <td className="p-4 text-sm text-gray-500">
-                                        {new Date(
-                                            job.date_posted,
-                                        ).toLocaleDateString()}
-                                    </td>
-
-                                    <td className="p-4">
-                                        <a
-                                            href={job.url}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="inline-block bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors"
-                                        >
-                                            View Job
-                                        </a>
-                                    </td>
-                                </tr>
+                ) : (
+                    <>
+                        <ul
+                            className={`${glass} divide-y divide-black/5 overflow-hidden dark:divide-white/10`}
+                        >
+                            {jobs.map((job) => (
+                                <li key={job.id}>
+                                    <JobCard
+                                        job={{
+                                            id: job.id,
+                                            title: job.title,
+                                            company: job.company,
+                                            url: job.url,
+                                            location: job.location,
+                                            date_posted: job.date_posted,
+                                            tech_stack: job.tech_stack,
+                                            geo_warning: job.geo_warning,
+                                            descriptionHtml: sanitizeDescription(
+                                                job.description,
+                                            ),
+                                        }}
+                                    />
+                                </li>
                             ))}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </main>
+                        </ul>
+                        <Pagination
+                            page={page}
+                            totalPages={totalPages}
+                            from={from + 1}
+                            to={from + jobs.length}
+                            total={totalJobs}
+                        />
+                    </>
+                )}
+            </main>
+        </div>
     );
 }

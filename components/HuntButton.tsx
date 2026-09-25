@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { LoaderCircle, RefreshCw } from "lucide-react";
 
 export default function HuntButton() {
     const [isHunting, setIsHunting] = useState(false);
@@ -16,7 +17,8 @@ export default function HuntButton() {
 
             if (data.error) throw new Error(data.error);
 
-            // This tells Next.js to refresh the page to show the new jobs
+            // Jump back to page 1 so the newest jobs are visible
+            router.push("/");
             router.refresh();
         } catch (error) {
             console.error(error);
@@ -30,18 +32,14 @@ export default function HuntButton() {
         <button
             onClick={handleHunt}
             disabled={isHunting}
-            className="bg-gray-900 hover:bg-black text-white text-sm font-semibold py-2 px-6 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+            className="inline-flex items-center gap-1.5 rounded-full bg-[#0071e3] px-3.5 py-1.5 text-[13px] font-medium text-white transition-colors hover:bg-[#0077ed] disabled:cursor-not-allowed disabled:opacity-60"
         >
             {isHunting ? (
-                <>
-                    <span className="animate-spin">⚙️</span> Jarvis is
-                    thinking...
-                </>
+                <LoaderCircle className="size-3.5 animate-spin" aria-hidden />
             ) : (
-                <>
-                    <span></span> Hunt for New Jobs
-                </>
+                <RefreshCw className="size-3.5" aria-hidden />
             )}
+            {isHunting ? "Fetching jobs…" : "Fetch new jobs"}
         </button>
     );
 }
