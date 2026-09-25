@@ -53,8 +53,8 @@ export default async function Home(props: PageProps<"/">) {
                         Remote jobs
                     </h1>
                     <p className="mt-2 text-zinc-500 dark:text-zinc-400">
-                        Fully remote roles from Remotive, open to candidates
-                        anywhere in the world.
+                        Worldwide remote developer roles from We Work Remotely,
+                        Jobicy and Remotive.
                     </p>
                 </div>
 

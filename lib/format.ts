@@ -10,3 +10,18 @@ export function timeAgo(dateString: string) {
         day: "numeric",
     });
 }
+
+// Used for display: every stored job's URL points at the site it came from.
+export function sourceFromUrl(url: string) {
+    const host = (() => {
+        try {
+            return new URL(url).hostname.replace(/^www\./, "");
+        } catch {
+            return "";
+        }
+    })();
+    if (host.endsWith("weworkremotely.com")) return "We Work Remotely";
+    if (host.endsWith("jobicy.com")) return "Jobicy";
+    if (host.endsWith("remotive.com")) return "Remotive";
+    return host || "Source";
+}

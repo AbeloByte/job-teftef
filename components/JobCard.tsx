@@ -5,12 +5,13 @@ import {
     ArrowUpRight,
     Building,
     Clock,
+    Globe,
     MapPin,
     PanelRightOpen,
     TriangleAlert,
 } from "lucide-react";
 import JobDetails from "@/components/JobDetails";
-import { timeAgo } from "@/lib/format";
+import { sourceFromUrl, timeAgo } from "@/lib/format";
 
 export type Job = {
     id: number | string;
@@ -50,6 +51,10 @@ export default function JobCard({ job }: { job: Job }) {
                             <time dateTime={job.date_posted} suppressHydrationWarning>
                                 {timeAgo(job.date_posted)}
                             </time>
+                        </span>
+                        <span className="inline-flex items-center gap-1">
+                            <Globe className="size-3.5" aria-hidden />
+                            {sourceFromUrl(job.url)}
                         </span>
                         {job.geo_warning && (
                             <span

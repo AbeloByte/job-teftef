@@ -11,7 +11,7 @@ import {
     X,
 } from "lucide-react";
 import type { Job } from "@/components/JobCard";
-import { timeAgo } from "@/lib/format";
+import { sourceFromUrl, timeAgo } from "@/lib/format";
 
 export default function JobDetails({
     job,
@@ -131,7 +131,7 @@ export default function JobDetails({
                         rel="noopener noreferrer"
                         className="flex w-full items-center justify-center gap-1.5 rounded-full bg-[#0071e3] py-2.5 text-sm font-medium text-white transition-colors hover:bg-[#0077ed]"
                     >
-                        Apply on Remotive
+                        Apply on {sourceFromUrl(job.url)}
                         <ArrowUpRight className="size-4" aria-hidden />
                     </a>
                 </footer>
